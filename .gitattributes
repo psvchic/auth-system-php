@@ -1,4 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-*.hack linguist-hidden
-*.hh linguist-hidden
+*.php linguist-language=HTML
+
