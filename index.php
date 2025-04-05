@@ -1,3 +1,9 @@
+<?php
+session_start();
+if(isset($_SESSION['login'])){
+    header("Location: dashboard.php");
+}
+?>
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -9,7 +15,7 @@
     <header><h1>Strona główna</h1></header>
     <main>
         <p>nwm co tu napisać ale strona główna to jest</p>
-        <p id="login-links">
+        <p id="linki-logowanie">
             <a href="./logIn.php">Zaloguj się</a>&nbsp
             <a href="./register.php">Zarejestruj się</a>
         </p>

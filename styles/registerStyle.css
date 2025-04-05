@@ -22,7 +22,7 @@ h2{
 font-size: 40px;
 margin-bottom: 12px;
 }
-#zaloguj{
+#zarejestruj{
     border-radius: 4px;
     border-color: white;
     padding: 10px;
@@ -40,12 +40,6 @@ input:not([type="submit"]){
     border-radius: 10px;
     border: none;
 }
-#zarejestrowano{
-    color: green;
-    text-align: center;
-    font-size: 110%;
-    visibility: hidden;
-}
 #masz-konto{
     color: white;
     text-decoration: none;
@@ -61,4 +55,10 @@ input:not([type="submit"]){
     content: "Przekierowywanie";
     color: white;
     animation: przekierowywanie 2s infinite steps(1);
+    visibility: hidden;
+}
+#wynik-rejestracji{
+    text-align: center;
+    font-size: 110%;
+    visibility: hidden;
 }

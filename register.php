@@ -18,9 +18,9 @@
             <input type="email" placeholder="Wpisz swój email" name="email" class="inputy" maxlength="100" required>
             <h2>HASŁO</h2>
             <input type="password" placeholder="Wpisz hasło" name="haslo"  class="inputy"  minlength="3" maxlength="60" required><br>
-            <input type="submit" id="zaloguj" value="ZAREJESTRUJ">
+            <input type="submit" id="zarejestruj" value="ZAREJESTRUJ">
         </form>
-        <p id="zarejestrowano">Zarejestrowano pomyślnie!<br><span id="przekierowywanie"></span></p>
+        <p id="wynik-rejestracji"><br><span id="przekierowywanie"></span></p>
         <a href="./logIn.php" id="masz-konto">Masz już konto?</a>
     </section>
     <script>
@@ -40,11 +40,20 @@ if(!empty($_POST)){
     $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
 
     $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`) VALUES($login, $email, $password)";
-    $query = mysqli_query($link, $sql);
-    if($query){
-        echo "<style>#zarejestrowano{visibility: visible;}</style>";
-        header("refresh:2;url=logIn.php");
+    $sql = "INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`) VALUES ('$login', '$email', '$hashed_pass')";
+    $sqlCheckAccount = "SELECT `login` FROM `uzytkownicy` WHERE login = '$login'";
+    $queryCheckAccount = mysqli_query($link, $sqlCheckAccount);
+
+    if(mysqli_num_rows($queryCheckAccount) == 1){
+        echo '<style>#wynik-rejestracji::before{content: "Użytkownik o podanym loginie już istnieje!"; color: red; visibility: visible}</style>';
+    }else{
+        $query = mysqli_query($link, $sql);
+        if($query){
+            echo '<style>#wynik-rejestracji::before{content: "Zarejestrowano pomyślnie"; color: green; visibility: visible;} #przekierowywanie::after{visibility: visible;}</style>';
+            header("refresh:2;url=logIn.php");
+        }else{
+            echo "<style>#wynik-rejestracji::before{content: 'Błąd rejestracji!'; color: red; visibility: visible;}</style>";
+        }
     }
 }
 ?>

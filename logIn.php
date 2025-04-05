@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -28,15 +31,21 @@ if(!empty($_POST)){
     $login = $_POST['login'];
     $password = $_POST['haslo'];
     $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
-    
     $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "SELECT `login`, `haslo` FROM uzytkownicy WHERE login = '$login' AND haslo = '$hashed_pass'";
+    $sql = "SELECT `login`, `haslo` FROM uzytkownicy WHERE login = '$login'";
     $query = mysqli_query($link, $sql);
+    $user = mysqli_fetch_assoc($query);
     if(mysqli_num_rows($query) == 1){
-        header("url=index.php");
+        if(password_verify($password, $user['haslo'])){
+            $_SESSION['login'] = $login;
+            header('Location: index.php');
+            exit;
+        }else{
+            echo '<style>#blad-logowania{visibility: visible;}</style>';
+        }
     }
     else{
-        echo "<style>#blad-logowania{visibility: visible;}</style>";
+        echo '<style>#blad-logowania{visibility: visible;}</style>';
     }
 }
 ?>
