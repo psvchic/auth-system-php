@@ -26,7 +26,7 @@
     <script>
         document.querySelectorAll(".inputy").forEach(input => {
             input.addEventListener("input", function() {
-            this.value = this.value.replace(/\s/g, "");
+            this.value = this.value.replace(" ", "");
         });
   });
     </script>
