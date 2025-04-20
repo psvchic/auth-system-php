@@ -39,17 +39,14 @@ if(isset($_SESSION['login'])){
 <?php
 if(!empty($_POST['wyslij-email'])){
     $email = $_POST['mail'];
-    $link = mysqli_connect("localhost", "root", "", "portal");
-    $sqlCheckEmail = "SELECT `kod` FROM `uzytkownicy` WHERE `email` = '$email'";
-    $sqlCheckIfVerified = "SELECT `zweryfikowany` FROM `uzytkownicy` WHERE `email` = '$email'";
-    $queryCheckVerified = mysqli_query($link, $sqlCheckIfVerified);
-    $queryCheckEmail = mysqli_query($link, $sqlCheckEmail);
-    $checkEmail = mysqli_num_rows($queryCheckEmail);
-    $code = mysqli_fetch_assoc($queryCheckEmail);
-    $verified = mysqli_fetch_assoc($queryCheckVerified);
+
+    $pdo = new PDO("mysql:host=localhost;dbname=portal;charset=utf8mb4", "root", "");
+    $stmtCheckEmail = $pdo->prepare("SELECT `kod`, `zweryfikowany` FROM `uzytkownicy` WHERE `email` = ?");
+    $stmtCheckEmail->execute([$email]);
+    $checkEmailAndIfVerified = $stmtCheckEmail->fetch();
     
-    if($checkEmail == 1){
-        if($verified['zweryfikowany'] == 'tak'){
+    if($checkEmailAndIfVerified){
+        if($checkEmailAndIfVerified['zweryfikowany'] == 'tak'){
             echo '<style>#wynik-wyslania-maila::before{content: "Mail już został zweryfikowany!"; visibility: visible;}</style>';
         }else{
             $_SESSION['temp-mail'] = $email;
@@ -63,13 +60,15 @@ if(!empty($_POST['wyslij-email'])){
 if(!empty($_POST['weryfikacja'])){
     $codeFromInput = $_POST['kod'];
     $email = $_SESSION['temp-mail'];
-    $link = mysqli_connect("localhost", "root", "", "portal");
-    $sqlCheckCode = "SELECT `kod` FROM `uzytkownicy` WHERE `kod` = '$codeFromInput'";
-    $sqlUpdateVerified = "UPDATE `uzytkownicy` SET `zweryfikowany`= 'tak' WHERE `email` = '$email'";
-    $queryCheckCode = mysqli_query($link, $sqlCheckCode);
-    $codeFromDatabase = mysqli_num_rows($queryCheckCode);
-    if($codeFromDatabase == 1){
-        mysqli_query($link, $sqlUpdateVerified);
+
+    $pdo = new PDO("mysql:host=localhost;dbname=portal;charset=utf8mb4", "root", "");
+    $stmtCheckCode = $pdo->prepare("SELECT `kod` FROM `uzytkownicy` WHERE `kod` = ? AND `email` = ?");
+    $stmtCheckCode->execute([$codeFromInput, $email]);
+    $checkCode = $stmtCheckCode->fetch();
+    $stmtUpdateVerified = $pdo->prepare("UPDATE `uzytkownicy` SET `zweryfikowany`= 'tak' WHERE `email` = ?");
+    
+    if($checkCode){
+        $stmtUpdateVerified->execute([$email]);
         session_destroy();
         echo '<style>#wynik-weryfikacji::before{content: "Zweryfikowano pomyślnie!"; color: green; visibility: visible;} #przekierowywanie::after{visibility: visible;} #weryfikacja-kod{visibility: visible;} #weryfikacja-email{visibility: hidden}</style>';
         header("refresh:2;url=logIn.php");

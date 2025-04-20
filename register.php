@@ -61,15 +61,17 @@ if(!empty($_POST['rejestracja'])){
         $verificationCode .= rand(0, 9);
     }
 
-    $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`, `kod`, `zweryfikowany`) VALUES ('$login', '$email', '$hashed_pass', '$verificationCode', 'nie')";
-    $sqlCheckAccount = "SELECT `login` FROM `uzytkownicy` WHERE login = '$login' OR email = '$email'";
-    $queryCheckAccount = mysqli_query($link, $sqlCheckAccount);
-    if((mysqli_num_rows($queryCheckAccount) == 1)){
+    $pdo = new PDO("mysql:host=localhost;dbname=portal;charset=utf8mb4", "root", "");
+    $stmt = $pdo->prepare("INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`, `kod`, `zweryfikowany`) VALUES (?, ?, ?, ?, 'nie')");
+    $stmtCheckIfExists = $pdo->prepare("SELECT `login` FROM `uzytkownicy` WHERE login = ? OR email = ?");
+    $stmtCheckIfExists->execute([$login, $email]);
+    $checkIfExists = $stmtCheckIfExists->fetch();
+
+    if(($checkIfExists)){
         echo '<style>#wynik-rejestracji::before{content: "Użytkownik o podanym loginie/emailu już istnieje!"; color: red; visibility: visible;}</style>';
     }else{
-        $query = mysqli_query($link, $sql);
-        if($query){
+        $register = $stmt->execute([$login, $email, $hashed_pass, $verificationCode]);
+        if($register){
             $_SESSION['temp-login'] = $login;
             // SCRIPT FOR SENDING MAIL HERE (e.g. using PHPMailer)
             echo '<style>#weryfikacja{visibility: visible;}</style>';
@@ -81,13 +83,15 @@ if(!empty($_POST['rejestracja'])){
 if(!empty($_POST['weryfikacja'])){
     $codeFromInput = $_POST['kod'];
     $login = $_SESSION['temp-login'];
-    $link = mysqli_connect("localhost", "root", "", "portal");
-    $sqlCheckCode = "SELECT `kod` FROM `uzytkownicy` WHERE `kod` = '$codeFromInput'";
-    $sqlUpdateVerified = "UPDATE `uzytkownicy` SET `zweryfikowany`= 'tak' WHERE `login` = '$login'";
-    $queryCheckCode = mysqli_query($link, $sqlCheckCode);
-    $codeFromDatabase = mysqli_num_rows($queryCheckCode);
-    if($codeFromDatabase == 1){
-        mysqli_query($link, $sqlUpdateVerified);
+    
+    $pdo = new PDO("mysql:host=localhost;dbname=portal;charset=utf8mb4", "root", "");
+    $stmtCheckCode = $pdo->prepare("SELECT `kod` FROM `uzytkownicy` WHERE `kod` = ? AND `login` = ?");
+    $stmtCheckCode->execute([$codeFromInput, $login]);
+    $checkCode = $stmtCheckCode->fetch();
+    $stmtUpdateVerified = $pdo->prepare("UPDATE `uzytkownicy` SET `zweryfikowany`= 'tak' WHERE `login` = ?");
+
+    if($checkCode){
+        $stmtUpdateVerified->execute([$login]);
         session_destroy();
         echo '<style>#wynik-rejestracji::before{content: "Zarejestrowano pomyślnie"; color: green; visibility: visible;} #przekierowywanie::after{visibility: visible;}</style>';
         header("refresh:2;url=logIn.php");

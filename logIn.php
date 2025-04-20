@@ -3,6 +3,8 @@ session_start();
 if(isset($_SESSION['login'])){
     header("Location: index.php");
 }
+error_reporting(E_ALL);
+ini_set('display_errors', 1)
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -36,16 +38,15 @@ if(!empty($_POST)){
     $login = $_POST['login'];
     $password = $_POST['haslo'];
     $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
-    $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "SELECT `login`, `haslo`, `email` FROM uzytkownicy WHERE login = '$login' OR `email` = '$login'";
-    $sqlVerified = "SELECT `zweryfikowany` FROM uzytkownicy WHERE login = '$login' OR `email` = '$login'";
-    $query = mysqli_query($link, $sql);
-    $queryVerify = mysqli_query($link, $sqlVerified);
-    $verifiedResult = mysqli_fetch_assoc($queryVerify);
-    $user = mysqli_fetch_assoc($query);
-    if(mysqli_num_rows($query) == 1){
+
+    $pdo = new PDO("mysql:host=localhost;dbname=portal;charset=utf8mb4", "root", "");
+    $stmt = $pdo->prepare("SELECT login, haslo, email, zweryfikowany FROM uzytkownicy WHERE login = ? OR email = ?");
+    $stmt->execute([$login, $login]);
+    $user = $stmt->fetch();
+
+    if($user){
         if(password_verify($password, $user['haslo'])){
-            if($verifiedResult['zweryfikowany'] == 'tak'){
+            if($user['zweryfikowany'] == 'tak'){
                 $_SESSION['login'] = $user['login'];
                 header('Location: index.php');
                 exit;
