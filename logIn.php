@@ -1,5 +1,8 @@
 <?php
 session_start();
+if(isset($_SESSION['login'])){
+    header("Location: index.php");
+}
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -16,7 +19,7 @@ session_start();
     <section id="strona-logowania">
         <form method="post" action="./logIn.php">
             <h2>LOGIN</h2>
-            <input type="text" minlength="3" maxlength="100" placeholder="Wpisz swój login" name="login" required>
+            <input type="text" minlength="3" maxlength="100" placeholder="Wpisz swój login lub e-mail" name="login" required>
             <h2>HASŁO</h2>
             <input type="password" placeholder="Wpisz hasło" name="haslo" required><br>
             <input type="submit" id="zaloguj" value="ZALOGUJ">
@@ -24,6 +27,8 @@ session_start();
         <p id="blad-logowania">Niepoprawny login lub hasło!</p>
         <a href="./register.php" id="masz-konto">Nie masz konta?</a>
     </section>
+    <p id="blad-weryfikacji">Nie jesteś zweryfikowany!</p>
+    <p id="weryfikuj">Aby się zweryfikować <a href="./mail-verification.php">kliknij tutaj</a></p>
 </body>
 </html>
 <?php
@@ -32,14 +37,22 @@ if(!empty($_POST)){
     $password = $_POST['haslo'];
     $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
     $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "SELECT `login`, `haslo` FROM uzytkownicy WHERE login = '$login'";
+    $sql = "SELECT `login`, `haslo`, `email` FROM uzytkownicy WHERE login = '$login' OR `email` = '$login'";
+    $sqlVerified = "SELECT `zweryfikowany` FROM uzytkownicy WHERE login = '$login' OR `email` = '$login'";
     $query = mysqli_query($link, $sql);
+    $queryVerify = mysqli_query($link, $sqlVerified);
+    $verifiedResult = mysqli_fetch_assoc($queryVerify);
     $user = mysqli_fetch_assoc($query);
     if(mysqli_num_rows($query) == 1){
         if(password_verify($password, $user['haslo'])){
-            $_SESSION['login'] = $login;
-            header('Location: index.php');
-            exit;
+            if($verifiedResult['zweryfikowany'] == 'tak'){
+                $_SESSION['login'] = $user['login'];
+                header('Location: index.php');
+                exit;
+            }else{
+                echo '<style>#blad-weryfikacji{visibility: visible;}</style>';
+                echo '<style>#weryfikuj{visibility: visible;}</style>';
+            }
         }else{
             echo '<style>#blad-logowania{visibility: visible;}</style>';
         }

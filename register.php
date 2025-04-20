@@ -1,3 +1,9 @@
+<?php
+session_start();
+if(isset($_SESSION['login'])){
+    header("Location: index.php");
+}
+?>
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -11,18 +17,28 @@
 </head>
 <body>
     <section id="strona-rejestracji">
-        <form method="post" action="./register.php">
+        <form action="./register.php" method="post">
             <h2>LOGIN</h2>
             <input type="text" minlength="3" maxlength="60" placeholder="Wpisz swój login" class="inputy" name="login" required>
             <h2>EMAIL</h2>
             <input type="email" placeholder="Wpisz swój email" name="email" class="inputy" maxlength="100" required>
             <h2>HASŁO</h2>
             <input type="password" placeholder="Wpisz hasło" name="haslo"  class="inputy"  minlength="3" maxlength="60" required><br>
-            <input type="submit" id="zarejestruj" value="ZAREJESTRUJ">
+            <input type="submit" id="zarejestruj" value="ZAREJESTRUJ" name="rejestracja">
         </form>
         <p id="wynik-rejestracji"><br><span id="przekierowywanie"></span></p>
         <a href="./logIn.php" id="masz-konto">Masz już konto?</a>
     </section>
+
+    <section id="weryfikacja">
+        <p>Przysłaliśmy Ci kod na adres e-mail który podałeś/aś. Wpisz kod w pole poniżej</p>
+        <form action="./register.php" method="post">
+            <input type="text" class="inputy" name="kod" minlength="6" maxlength="6">
+            <input type="submit" value="Zweryfikuj" name="weryfikacja">
+        </form>
+        <p id="bledny-kod"></p>
+    </section>
+
     <script>
         document.querySelectorAll(".inputy").forEach(input => {
             input.addEventListener("input", function() {
@@ -30,30 +46,55 @@
         });
   });
     </script>
+
 </body>
 </html>
 <?php
-if(!empty($_POST)){
+
+if(!empty($_POST['rejestracja'])){
     $login = $_POST['login'];
     $password = $_POST['haslo'];
     $email = $_POST['email'];
     $hashed_pass = password_hash($password, PASSWORD_DEFAULT);
+    $verificationCode = '';
+    for($i = 0; $i < 6; $i++){
+        $verificationCode .= rand(0, 9);
+    }
 
     $link = mysqli_connect("localhost", "root", "", "portal");
-    $sql = "INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`) VALUES ('$login', '$email', '$hashed_pass')";
-    $sqlCheckAccount = "SELECT `login` FROM `uzytkownicy` WHERE login = '$login'";
+    $sql = "INSERT INTO `uzytkownicy`(`login`, `email`, `haslo`, `kod`, `zweryfikowany`) VALUES ('$login', '$email', '$hashed_pass', '$verificationCode', 'nie')";
+    $sqlCheckAccount = "SELECT `login` FROM `uzytkownicy` WHERE login = '$login' OR email = '$email'";
     $queryCheckAccount = mysqli_query($link, $sqlCheckAccount);
-
-    if(mysqli_num_rows($queryCheckAccount) == 1){
-        echo '<style>#wynik-rejestracji::before{content: "Użytkownik o podanym loginie już istnieje!"; color: red; visibility: visible}</style>';
+    if((mysqli_num_rows($queryCheckAccount) == 1)){
+        echo '<style>#wynik-rejestracji::before{content: "Użytkownik o podanym loginie/emailu już istnieje!"; color: red; visibility: visible;}</style>';
     }else{
         $query = mysqli_query($link, $sql);
         if($query){
-            echo '<style>#wynik-rejestracji::before{content: "Zarejestrowano pomyślnie"; color: green; visibility: visible;} #przekierowywanie::after{visibility: visible;}</style>';
-            header("refresh:2;url=logIn.php");
+            $_SESSION['temp-login'] = $login;
+            // SCRIPT FOR SENDING MAIL HERE (e.g. using PHPMailer)
+            echo '<style>#weryfikacja{visibility: visible;}</style>';
         }else{
             echo "<style>#wynik-rejestracji::before{content: 'Błąd rejestracji!'; color: red; visibility: visible;}</style>";
         }
+    }
+}
+if(!empty($_POST['weryfikacja'])){
+    $codeFromInput = $_POST['kod'];
+    $login = $_SESSION['temp-login'];
+    $link = mysqli_connect("localhost", "root", "", "portal");
+    $sqlCheckCode = "SELECT `kod` FROM `uzytkownicy` WHERE `kod` = '$codeFromInput'";
+    $sqlUpdateVerified = "UPDATE `uzytkownicy` SET `zweryfikowany`= 'tak' WHERE `login` = '$login'";
+    $queryCheckCode = mysqli_query($link, $sqlCheckCode);
+    $codeFromDatabase = mysqli_num_rows($queryCheckCode);
+    if($codeFromDatabase == 1){
+        mysqli_query($link, $sqlUpdateVerified);
+        session_destroy();
+        echo '<style>#wynik-rejestracji::before{content: "Zarejestrowano pomyślnie"; color: green; visibility: visible;} #przekierowywanie::after{visibility: visible;}</style>';
+        header("refresh:2;url=logIn.php");
+    }else{
+        echo "<style>#bledny-kod::before{content: 'Zły kod! Spróbuj ponownie'; color: red; visibility: visible;}</style>";
+        echo '<style>#weryfikacja{visibility: visible;}</style>';
+
     }
 }
 ?>

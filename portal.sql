@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 08, 2025 at 10:42 PM
+-- Generation Time: Apr 19, 2025 at 03:47 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -31,8 +31,14 @@ CREATE TABLE `uzytkownicy` (
   `id` int(11) NOT NULL,
   `login` varchar(60) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `haslo` varchar(255) NOT NULL
+  `haslo` varchar(255) NOT NULL,
+  `kod` varchar(6) NOT NULL,
+  `zweryfikowany` varchar(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Indexes for dumped tables
+--
 
 --
 -- Indexes for table `uzytkownicy`
@@ -41,11 +47,12 @@ ALTER TABLE `uzytkownicy`
   ADD PRIMARY KEY (`id`);
 
 --
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
 -- AUTO_INCREMENT for table `uzytkownicy`
 --
-ALTER TABLE `uzytkownicy`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
